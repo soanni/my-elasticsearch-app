@@ -1,131 +1,71 @@
 package main
 
 import (
-	"log"
-	"net/http"
-	es7 "github.com/elastic/go-elasticsearch/v7"
+	"fmt"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
+	"io"
+	"os"
+	"path"
+	"strconv"
+	"time"
+)
+
+var (
+	logfile os.File
 )
 
 func main() {
-	cfg := es7.Config{
-	    Addresses: []string{
-	        "http://10.69.12.196:9200",
-	    },
-	    Username: "***",
-	    Password: "***",
-	    Transport: &http.Transport{
-	    },
+	argsWithoutProg := os.Args[1:]
+	SetupConfigLoad(argsWithoutProg)
+	SetupLogging(&logfile)
+
+	hostName := "dl12.aureacentral.com"
+
+	// fmt.Println(getContainersList(hostName))
+
+	startedAfter := time.Now().Unix() - int64(viper.GetInt("periodDays")*3600*24)
+
+	runningContainers := getContainersList(hostName, startedAfter)
+
+	for _, container := range runningContainers {
+
+		fmt.Printf("ID: %s, Name: %s, Created: %s , Status: %s \n", container.ID, container.Names[0], time.Unix(container.Created, 0).Format("2006-01-02"), container.Status)
 	}
 
-	client, err := es7.NewClient(cfg)
+}
+
+func SetupLogging(file *os.File) {
+	timeFormatString := "2006-01-02"
+	timeSalt := time.Now().Format(timeFormatString) + "_" + strconv.FormatInt(int64(time.Now().Unix()), 10)
+	outputPath := viper.GetString("logPath")
+
+	logFilename := "idle_containers_" + timeSalt + ".log"
+	file, err := os.OpenFile(path.Join(outputPath, logFilename), os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
-		log.Fatalf("Error creating the client: %s\n", err)
+		log.Fatal(err)
 	}
 
-	res, err := client.Info()
-	if err != nil {
-		log.Fatalf("Error getting response: %s\n", err)
+	mw := io.MultiWriter(os.Stdout, file)
+	log.SetOutput(mw)
+	log.SetLevel(log.DebugLevel)
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp: true,
+	})
+}
+
+func SetupConfigLoad(args []string) {
+	if len(args) > 0 {
+		viper.SetConfigFile(args[0])
+	} else {
+		viper.SetConfigName("config")       // name of config file (without extension)
+		viper.AddConfigPath("/opt/scripts") // path to look for the config file in
+		viper.AddConfigPath(".")
 	}
 
-	log.Println(res)
-
-	q := `{
-	"aggs": {
-	"by_container": {
-	  "aggs": {
-	    "average": {
-	      "max": {
-	        "field": "avg"
-	      }
-	    },
-	    "max": {
-	      "max": {
-	        "field": "max"
-	      }
-	    },
-	    "min": {
-	      "max": {
-	        "field": "min"
-	      }
-	    }
-	  },
-	  "composite": {
-	    "size": 10000,
-	    "sources": [
-	      {
-	        "category": {
-	          "terms": {
-	            "field": "cat.keyword",
-	            "missing_bucket": true
-	          }
-	        }
-	      },
-	      {
-	        "container_name": {
-	          "terms": {
-	            "field": "cname.keyword",
-	            "order": "asc"
-	          }
-	        }
-	      },
-	      {
-	        "cpuPeriod": {
-	          "terms": {
-	            "field": "container.cpuPeriod"
-	          }
-	        }
-	      },
-	      {
-	        "cpuQuota": {
-	          "terms": {
-	            "field": "container.cpuQuota"
-	          }
-	        }
-	      },
-	      {
-	        "memLimit": {
-	          "terms": {
-	            "field": "container.memLimit"
-	          }
-	        }
-	      }
-	    ]
-	  }
+	err := viper.ReadInConfig() // Find and read the config file
+	if err != nil {             // Handle errors reading the config file
+		log.Fatalf("*** Fatal error config file: %s ***\n", err)
 	}
-	},
-	"query": {
-	"bool": {
-	  "must": {
-	    "term": {
-	      "cname.keyword": "prod_xo-clients_xotimecard_2"
-	    }
-	  },
-	  "filter": {
-	    "range": {
-	      "metricStartDate": {
-	        "gte": "now-28d/d",
-	        "lte": "now/d"
-	      }
-	    }
-	  }
-	}
-	},
-	"size": 0
-}`
-
-	res, err = client.Search(
-		client.Search.WithContext(context.Background()),
-		client.Search.WithIndex("d1_docker_metrics_test"),
-		client.Search.WithBody(&buf),
-		client.Search.WithTrackTotalHits(true),
-		client.Search.WithPretty(),
-	)
-
-	if err != nil {
-		log.Fatalf("ERROR: %s", err)
-	}
-	defer res.Body.Close()
-
-	log.Println(res)
-
+	log.Infof("*** Configuration file used: %s ***\n", viper.ConfigFileUsed())
 }

@@ -1,0 +1,83 @@
+{
+  "periodDays": 28,
+  "cacertPath":"C:\\Users\\soanni\\.docker\\ca.pem",
+  "certPath":  "C:\\Users\\soanni\\.docker\\cert.pem",
+  "keyPath":   "C:\\Users\\soanni\\.docker\\key.pem",
+  "logPath": "C:\\Users\\soanni\\PROJECTS\\my-elasticsearch-app",
+  "elasticUser": "***",
+  "elasticPass": "***",
+  "elasticServer" : "10.69.12.196",
+  "elasticPort" : "9200",
+  "dockerHosts": {
+    "dl1.aureacentral.com": {
+      "os": "linux",
+      "enabled": true,
+      "tls": true
+    },
+    "dl2.aureacentral.com": {
+      "os": "linux",
+      "enabled": true,
+      "tls": true
+    },
+    "dl3.aureacentral.com": {
+      "os": "linux",
+      "enabled": true,
+      "tls": true
+    },
+    "dl4.aureacentral.com": {
+      "os": "linux",
+      "enabled": true,
+      "tls": true
+    },
+    "dl5.aureacentral.com": {
+      "os": "linux",
+      "enabled": true,
+      "tls": true
+    },
+    "dl6.aureacentral.com": {
+      "os": "linux",
+      "enabled": true,
+      "tls": true
+    },
+    "dl7.aureacentral.com": {
+      "os": "linux",
+      "enabled": true,
+      "tls": true
+    },
+    "dl8.aureacentral.com": {
+      "os": "linux",
+      "enabled": true,
+      "tls": true
+    },
+    "dl9.aureacentral.com": {
+      "os": "linux",
+      "enabled": true,
+      "tls": true
+    },
+    "dl10.aureacentral.com": {
+      "os": "linux",
+      "enabled": true,
+      "tls": true
+    },
+    "dl1.eu.aureacentral.com": {
+      "os": "linux",
+      "enabled": true,
+      "tls": true
+    },
+    "dl12.aureacentral.com": {
+      "os": "linux",
+      "enabled": true,
+      "tls": false
+    },
+    "dw2.aureacentral.com": {
+      "os": "windows",
+      "enabled": true,
+      "tls": false
+    },
+    "dw1.eu.aureacentral.com": {
+      "os": "windows",
+      "enabled": true,
+      "tls": false
+    }        
+  }
+}
