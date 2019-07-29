@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -28,9 +29,11 @@ func main() {
 
 	runningContainers := getContainersList(hostName, startedAfter)
 
-	for _, container := range runningContainers {
+	esClient := getElasticClient()
 
+	for _, container := range runningContainers {
 		fmt.Printf("ID: %s, Name: %s, Created: %s , Status: %s \n", container.ID, container.Names[0], time.Unix(container.Created, 0).Format("2006-01-02"), container.Status)
+		getContainerStats(strings.TrimPrefix(container.Names[0], "/"), "dl12_docker_metrics_test", esClient)
 	}
 
 }
