@@ -1,14 +1,13 @@
 package main
 
 import (
-	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"io"
 	"os"
 	"path"
 	"strconv"
-	"strings"
+	_ "strings"
 	"time"
 )
 
@@ -22,20 +21,19 @@ func main() {
 	SetupLogging(&logfile)
 
 	hostName := "dl12.aureacentral.com"
-
-	// fmt.Println(getContainersList(hostName))
-
 	startedAfter := time.Now().Unix() - int64(viper.GetInt("periodDays")*3600*24)
-
 	runningContainers := getContainersList(hostName, startedAfter)
 
 	esClient := getElasticClient()
 
 	for _, container := range runningContainers {
-		fmt.Printf("ID: %s, Name: %s, Created: %s , Status: %s \n", container.ID, container.Names[0], time.Unix(container.Created, 0).Format("2006-01-02"), container.Status)
-		getContainerStats(strings.TrimPrefix(container.Names[0], "/"), "dl12_docker_metrics_test", esClient)
+		cname := container.Names[0]
+		log.Infof("=====================\n")
+		log.Infof("ID: %s, Name: %s, Created: %s , Status: %s \n", container.ID, container.Names[0], time.Unix(container.Created, 0).Format("2006-01-02"), container.Status)
+		getContainerMetricStats(cname, "dl12_docker_metrics_test", esClient)
+		getContainerVolumeStats(cname, "new_dl12", "2019-07-29T00:00:00.000Z", esClient)
+		log.Infof("=====================\n")
 	}
-
 }
 
 func SetupLogging(file *os.File) {
